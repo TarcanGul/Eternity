@@ -23,7 +23,7 @@ namespace Eternity
         const int FORM_HEIGHT = 800;
         const int DEF_BUTTON_WIDTH = FORM_WIDTH / 8;
         const int DEF_BUTTON_HEIGHT = FORM_HEIGHT / 16;
-        const int FINAL_LEVEL = 2;
+        const int FINAL_LEVEL = 3;
 
         Font greetingFont;
     
@@ -192,6 +192,8 @@ namespace Eternity
                 case 2: level = new Level2(); 
                         this.Text = "Level 2";
                         break;
+                case 3: level = new Level3();
+                    this.Text = "Level 3"; break;
                 default: GoBackToMenu(); break;
                 //Default throw exception.
             }
@@ -209,6 +211,14 @@ namespace Eternity
                 else
                     g.FillRectangle(brush, w.x, w.y, w.size, w.size);
             }
+
+            if (level.AllEnemies.Count != 0)
+            {
+                foreach(Enemy e in level.AllEnemies)
+                {
+                    e.DrawEnemy(g, brush);
+                }
+            }
         }
 
         private void ShowPlayerSuccessScreen()
@@ -219,6 +229,33 @@ namespace Eternity
             PutSuccessScreen();
         }
 
+        private void ShowPlayerFailureScreen()
+        {
+            keyboardHandlerEnabled = false;
+            this.Text = "Oops!";
+            ClearScreen();
+            PutFailureScreen();
+        }
+
+        private void PutFailureScreen()
+        {
+            Button yesButton = new Button();
+            yesButton.Text = "Back To Menu";
+            yesButton.Left = FORM_WIDTH / 4;
+            yesButton.Top = FORM_HEIGHT / 4 + 8 * DEF_BUTTON_HEIGHT;
+            yesButton.Size = new Size(DEF_BUTTON_WIDTH, DEF_BUTTON_HEIGHT);
+            currentLevel = 1;
+            yesButton.Click += new EventHandler(this.BackToMenu_Click);
+            this.Controls.Add(yesButton);
+
+            Font successFont = new Font(FontFamily.GenericSerif.Name, 24f, FontStyle.Bold);
+            //TODO: Add lives.
+            pen.Color = Color.Black;
+
+            g.DrawString("Oops!", successFont, brush, new PointF(FORM_WIDTH / 4, FORM_HEIGHT / 4 + DEF_BUTTON_HEIGHT * 2));
+            g.DrawString("Game Over!", successFont, brush, new PointF(FORM_WIDTH / 4, FORM_HEIGHT / 2));
+            
+        }
         private void PutSuccessScreen()
         {
             Button yesButton = new Button();
@@ -232,6 +269,7 @@ namespace Eternity
             Font successFont = new Font(FontFamily.GenericSerif.Name, 24f, FontStyle.Bold);
             if (currentLevel == FINAL_LEVEL)
             {
+                pen.Color = Color.Black;
                 g.DrawString("Congrats, you finished Eternity!", successFont, brush, new PointF(FORM_WIDTH / 4, FORM_HEIGHT / 4 + DEF_BUTTON_HEIGHT * 2));
                 g.DrawString("THANK YOU FOR PLAYING!", successFont, brush, new PointF(FORM_WIDTH / 4, FORM_HEIGHT / 2));
             }
@@ -291,6 +329,7 @@ namespace Eternity
                         if (player.y < 0) player.y = 0;
                         else if (level != null && level.InWallBoundaries(player.x, player.y)) player.y += 10; //Undo change.
                         else if (level != null && level.DestinationReached(player.x, player.y)) ShowPlayerSuccessScreen();
+                        else if (level != null && level.TouchedEnemy(player.x, player.y)) ShowPlayerFailureScreen();
                         else refreshView();
                         break;
                     case Keys.Left:
@@ -299,6 +338,7 @@ namespace Eternity
                         if (player.x < 0) player.x = 0;
                         else if (level != null && level.InWallBoundaries(player.x, player.y)) player.x += 10; //Undo change.
                         else if (level != null && level.DestinationReached(player.x, player.y)) ShowPlayerSuccessScreen();
+                        else if (level != null && level.TouchedEnemy(player.x, player.y)) ShowPlayerFailureScreen();
                         else refreshView();
                         break;
                     case Keys.Down:
@@ -307,6 +347,7 @@ namespace Eternity
                         if (player.y > FORM_HEIGHT - 30) player.y = FORM_HEIGHT - 30;
                         else if (level != null && level.InWallBoundaries(player.x, player.y)) player.y -= 10; //Undo change.
                         else if (level != null && level.DestinationReached(player.x, player.y)) ShowPlayerSuccessScreen();
+                        else if (level != null && level.TouchedEnemy(player.x, player.y)) ShowPlayerFailureScreen();
                         else refreshView();
                         break;
                     case Keys.Right:
@@ -315,6 +356,7 @@ namespace Eternity
                         if (player.x > FORM_WIDTH - 30) player.x = FORM_WIDTH - 30;
                         else if (level != null && level.InWallBoundaries(player.x, player.y)) player.x -= 10; //Undo change.
                         else if (level != null && level.DestinationReached(player.x, player.y)) ShowPlayerSuccessScreen();
+                        else if (level != null && level.TouchedEnemy(player.x, player.y)) ShowPlayerFailureScreen();
                         else refreshView();
                         break;
                 }

@@ -78,6 +78,7 @@ namespace Eternity
         
 
         List<Wall> allWalls;
+        List<Enemy> allEnemies;
 
         int wall_size = 80;
         int character_size = 30;
@@ -85,7 +86,7 @@ namespace Eternity
         public WallLevel()
         {
             allWalls = new List<Wall>();
-            
+            allEnemies = new List<Enemy>();   
         }
 
         public int[,] Level
@@ -128,7 +129,15 @@ namespace Eternity
                     allWalls.Add(wall);
                 }
             }
+
+            
         }
+
+        public void AddEnemy(Enemy e)
+        {
+            allEnemies.Add(e);
+        }
+
 
         public List<Wall> AllWalls
         {
@@ -136,6 +145,11 @@ namespace Eternity
             {
                 return allWalls;
             }
+        }
+
+        public List<Enemy> AllEnemies
+        {
+            get { return allEnemies; }
         }
 
         public Wall GetSpawnPoint()
@@ -160,6 +174,19 @@ namespace Eternity
                 || index_y < n && index_rt_x < n && level[index_y, index_rt_x] == 1 
                 || index_ld_y < n && index_x < n && level[index_ld_y, index_x] == 1 
                 || index_rd_y < n && index_rd_x < n && level[index_rd_y, index_rd_x] == 1;
+        }
+
+        public bool TouchedEnemy(int player_x, int player_y)
+        {
+            foreach (Enemy e in allEnemies)
+            {
+                if (player_x > e.x && player_x < e.x + e.Size && player_y > e.y && player_y < e.y + e.Size
+                    || player_x + character_size > e.x && player_x + character_size < e.x + e.Size && player_y > e.y && player_y < e.y + e.Size
+                    || player_x > e.x && player_x < e.x + e.Size && player_y + character_size > e.y && player_y + character_size < e.y + e.Size
+                    || player_x + character_size > e.x && player_x + character_size < e.x + e.Size && player_y + character_size > e.y && player_y + character_size < e.y + e.Size
+                    ) return true;
+            }
+            return false;
         }
 
         public bool DestinationReached(int player_x, int player_y)

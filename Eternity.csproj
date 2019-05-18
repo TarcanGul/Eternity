@@ -46,9 +46,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Enemy.cs" />
     <Compile Include="GameCharacter.cs" />
     <Compile Include="Level1.cs" />
     <Compile Include="Level2.cs" />
+    <Compile Include="Level3.cs" />
     <Compile Include="MainFrame.cs">
       <SubType>Form</SubType>
     </Compile>
