@@ -25,6 +25,15 @@ namespace Eternity.Levels
                 { 3,0,0,0,0,0,0,0,0,1 }
             };
             createLevel();
+
+            RedSquare redSquare1 = new RedSquare(80, 640, 80);
+            AddEnemy(redSquare1);
+
+            RedSquare redSquare2 = new RedSquare(300, 100, 40);
+            AddEnemy(redSquare2);
+
+            RedSquare redSquare3 = new RedSquare(580, 240, 220);
+            AddEnemy(redSquare3);
         }
     }
 }

@@ -52,6 +52,7 @@
     <Compile Include="Levels\Level2.cs" />
     <Compile Include="Levels\Level3.cs" />
     <Compile Include="Levels\Level4.cs" />
+    <Compile Include="Levels\Level5.cs" />
     <Compile Include="MainFrame.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -68,6 +69,8 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Images\" />
+    <Folder Include="Music\" />
     <Folder Include="Properties\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

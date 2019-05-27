@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using System.Drawing.Imaging;
 using System.Diagnostics;
 using Eternity.Levels;
+using System.Media;
 
 
 namespace Eternity
@@ -25,11 +26,10 @@ namespace Eternity
         public static int FORM_HEIGHT { get; } = 800;
         static int DEF_BUTTON_WIDTH = FORM_WIDTH / 8;
         static int DEF_BUTTON_HEIGHT = FORM_HEIGHT / 16;
-        const int FINAL_LEVEL = 4;
+        const int FINAL_LEVEL = 5;
         Font greetingFont;
+        Image WallImage = Image.FromFile("../../Images/Wall.jpg");
 
-        bool wallDrawn = false;
-    
         private Bitmap DrawingArea;
         Pen pen;
         SolidBrush brush;
@@ -45,6 +45,8 @@ namespace Eternity
         int currentLevel = 1;
 
         bool keyboardHandlerEnabled = true;
+
+        System.Media.SoundPlayer soundPlayer;
         public void UpdateLevel(object sender, EventArgs e)
         {
             Debug.WriteLine("Enemy thread started");
@@ -54,7 +56,7 @@ namespace Eternity
                 {
                     Debug.WriteLine("Moving enemy...");
                     MovingEnemy movingEnemy = (MovingEnemy)enemy;
-                    movingEnemy.RedrawEnemy(g, brush);
+                    movingEnemy.MoveEnemy();
                 }
             }
             refreshView();
@@ -66,9 +68,12 @@ namespace Eternity
         public MainFrame()
         {
             InitializeComponent();
+            soundPlayer = new SoundPlayer();
+            soundPlayer.SoundLocation = "../../Music/Spooky.wav";
+            soundPlayer.PlayLooping();
             UpdateTimer = new System.Windows.Forms.Timer();
             UpdateTimer.Tick += new EventHandler(UpdateLevel);
-            UpdateTimer.Interval = 1000/60;
+            UpdateTimer.Interval = 1000/120;
             this.Paint += new PaintEventHandler(this.OpenPaintEvent);
             DrawingArea = new Bitmap(FORM_WIDTH, FORM_HEIGHT, PixelFormat.Format24bppRgb);
             g = Graphics.FromImage(DrawingArea);
@@ -196,12 +201,12 @@ namespace Eternity
             brush.Color = Color.Red;
             g.Clear(Color.Azure);
             this.Invalidate();
-            g.FillEllipse(brush, player.x, player.y, player.Size, player.Size);
+            player.RedrawCharacter(g);
             foreach (Enemy e in level.AllEnemies)
             {
                 if (e is MovingEnemy)
                 {
-                    e.DrawEnemy(g, brush);
+                    e.DrawEnemy(g);
                 }
             }
             createLevel();
@@ -210,6 +215,7 @@ namespace Eternity
         private void startGame()
         {
             keyboardHandlerEnabled = true;
+            
             switch (currentLevel)
             {
                 case 1: level = new Level1();
@@ -222,9 +228,13 @@ namespace Eternity
                     this.Text = "Level 3"; break;
                 case 4: level = new Level4();
                     this.Text = "Level 4"; break;
+                case 5:
+                    level = new Level5();
+                    this.Text = "Level 5";
+                    break;
                 default: GoBackToMenu(); break;
-                //Default throw exception.
             }
+            
             createLevel();
             UpdateTimer.Start();
             brush.Color = Color.Red;
@@ -242,13 +252,18 @@ namespace Eternity
                     if (brush.Color != w.color) brush.Color = w.color;
 
 
-                    if (w.GetType() == typeof(SpawnWall))
-                    {
-                        pen.Color = w.color;
-                        g.DrawRectangle(pen, w.x, w.y, w.size, w.size);
-                    }
-                    else
-                        g.FillRectangle(brush, w.x, w.y, w.size, w.size);
+                if (w.GetType() == typeof(SpawnWall))
+                {
+                    pen.Color = w.color;
+                    g.DrawRectangle(pen, w.x, w.y, w.size, w.size);
+
+                }
+                else if (w.GetType() == typeof(SuccessWall))
+                {
+                    g.FillRectangle(brush, w.x, w.y, w.size, w.size);
+                }
+                else
+                    g.DrawImage(WallImage, w.x, w.y, w.size, w.size);
                 }
                 
 
@@ -256,7 +271,7 @@ namespace Eternity
                 {
                     foreach (Enemy e in level.AllEnemies)
                     {
-                        e.DrawEnemy(g, brush);
+                        e.DrawEnemy(g);
                     }
                 }
 
@@ -297,7 +312,7 @@ namespace Eternity
 
             Font successFont = new Font(FontFamily.GenericSerif.Name, 24f, FontStyle.Bold);
             //TODO: Add lives.
-            pen.Color = Color.Black;
+            brush.Color = Color.Black;
 
             g.DrawString("Oops!", successFont, brush, new PointF(FORM_WIDTH / 4, FORM_HEIGHT / 4 + DEF_BUTTON_HEIGHT * 2));
             g.DrawString("Game Over!", successFont, brush, new PointF(FORM_WIDTH / 4, FORM_HEIGHT / 2));
@@ -316,14 +331,14 @@ namespace Eternity
             Font successFont = new Font(FontFamily.GenericSerif.Name, 24f, FontStyle.Bold);
             if (currentLevel == FINAL_LEVEL)
             {
-                pen.Color = Color.Black;
+                brush.Color = Color.Black;
                 g.DrawString("Congrats, you finished Eternity!", successFont, brush, new PointF(FORM_WIDTH / 4, FORM_HEIGHT / 4 + DEF_BUTTON_HEIGHT * 2));
                 g.DrawString("THANK YOU FOR PLAYING!", successFont, brush, new PointF(FORM_WIDTH / 4, FORM_HEIGHT / 2));
             }
             else
             {
-                pen.Color = Color.Black;
-               
+                brush.Color = Color.Black;
+
                 g.DrawString("Congrats, you beat level " + currentLevel++ + " !", successFont, brush, new PointF(FORM_WIDTH / 4, FORM_HEIGHT / 4 + DEF_BUTTON_HEIGHT * 2));
                 g.DrawString("READY FOR NEW CHALLENGES?", successFont, brush, new PointF(FORM_WIDTH / 4, FORM_HEIGHT / 2));
 
@@ -380,7 +395,7 @@ namespace Eternity
                     case Keys.Left:
                     case Keys.A:
                         player.x -= 10;
-                        if (level != null && level.InWallBoundaries(player.x, player.y)) player.x += 10;
+                        if (level != null && level.InWallBoundaries(player.x, player.y)) player.x += 10; //Undo change.
                         else if (player.x < 0) player.x = 0;
                         break;
                     case Keys.Down:

@@ -14,7 +14,7 @@ namespace Eternity
         const int DEF_SIZE = 30;
         static Color DEF_COLOR = Color.Blue;
         Graphics callingGraphics;
-
+        Image character_image = Image.FromFile("../../Images/Character.png");
         
         int pos_x;
         int pos_y;
@@ -74,9 +74,13 @@ namespace Eternity
             pos_x = x;
             pos_y = y;
             callingGraphics = g;
-            g.FillEllipse(brush, pos_x, pos_y, size, size);
+            g.DrawImage(character_image, pos_x, pos_y, size, size);
         }
 
+        public void RedrawCharacter(Graphics g)
+        {
+            g.DrawImage(character_image, pos_x, pos_y, size, size);
+        }
 
         
     }

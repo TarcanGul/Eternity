@@ -15,7 +15,7 @@ namespace Eternity
         public int x { get; set; }
         public int y { get; set; }
         public int Size { get; set; }
-        protected Color Color { get; set; }
+        
 
         protected Enemy(int x_pos, int y_pos, int size)
         {
@@ -24,11 +24,17 @@ namespace Eternity
             this.Size = size;
         }
 
-        public abstract void DrawEnemy(Graphics g, SolidBrush b);
+        public abstract void DrawEnemy(Graphics g);
     }
 
     public abstract class MovingEnemy : Enemy
     {
+        public int Threshold_x_right { get; set; } = MainFrame.FORM_WIDTH -100;
+        public int Threshold_x_left { get; set; } = 0;
+        public int Threshold_y_up { get; set; } = 0;
+        public int Threshold_y_down { get; set; } = MainFrame.FORM_HEIGHT - 100;
+
+
         protected MovingEnemy(int x_pos, int y_pos, int size) : base(x_pos, y_pos, size)
         {
             this.x = x_pos;
@@ -36,59 +42,77 @@ namespace Eternity
             this.Size = size;
         }
 
-        public abstract void RedrawEnemy(Graphics g, SolidBrush b);
+        public abstract void MoveEnemy();
     }
 
     public class RedSquare : Enemy
     {
+        Image WallImage = Image.FromFile("../../Images/RedSquare.png");
         public RedSquare(int x_pos, int y_pos, int size) : base(x_pos, y_pos, size)
         {
-            this.Color = Color.Red;
         }
 
         override
-        public void DrawEnemy(Graphics g, SolidBrush b)
+        public void DrawEnemy(Graphics g)
         {
-            b.Color = Color;
-            g.FillRectangle(b, this.x, this.y, this.Size, this.Size);
+            g.DrawImage(WallImage, this.x, this.y, this.Size, this.Size);
         }
     }
 
     public class KillerGreen : MovingEnemy
     {
-        int Threshold_x_right { get; set; } = MainFrame.FORM_WIDTH;
-        int Threshold_x_left { get; set; } = 0;
-        int Threshold_y_up { get; set; } = 0;
-        int Threshold_y_down { get; set; } = MainFrame.FORM_HEIGHT;
+        Image WallImage = Image.FromFile("../../Images/GreenKiller.png");
         bool goingRight = true;
-        public KillerGreen(int x_pos, int y_pos, int size) : base(x_pos, y_pos, size)
+        bool goingDown = true;
+        bool moveHorizontal;
+        bool moveVertical;
+        int speed;
+        public KillerGreen(int x_pos, int y_pos, int size, bool moveHorizontal, bool moveVertical, int speed) : base(x_pos, y_pos, size)
         {
-            this.Color = Color.Green;
+            this.moveHorizontal = moveHorizontal;
+            this.moveVertical = moveVertical;
+            this.speed = speed;
         }
 
         override
-        public void DrawEnemy(Graphics g, SolidBrush b)
+        public void DrawEnemy(Graphics g)
         {
-            b.Color = Color;
-            g.FillRectangle(b, this.x, this.y, this.Size, this.Size);
+            g.DrawImage(WallImage, this.x, this.y, this.Size, this.Size);
         }
 
         override
-        public void RedrawEnemy(Graphics g, SolidBrush b)
+        public void MoveEnemy()
         {
-
-
-            if (goingRight && this.x < Threshold_x_right - 100)
+            if (moveHorizontal)
             {
-                this.x += 5;
+                if (goingRight && this.x < Threshold_x_right)
+                {
+                    this.x += speed;
+                }
+                else if (this.x > Threshold_x_left)
+                {
+                    goingRight = false;
+                    this.x -= speed;
+                }
+                else if (!goingRight && this.x <= Threshold_x_left)
+                    goingRight = true;
             }
-            else if (this.x > Threshold_x_left + 100)
+            if (moveVertical)
             {
-                goingRight = false;
-                this.x -= 5;
+                if (goingDown && this.y < Threshold_y_down)
+                {
+                    this.y += speed;
+                }
+                else if (this.y > Threshold_y_up)
+                {
+                    goingDown = false;
+                    this.y -= speed;
+                }
+                else if (!goingDown && this.y <= Threshold_y_up)
+                    goingDown = true;
             }
-            else if (!goingRight && this.x <= Threshold_x_left + 100)
-                goingRight = true;
+            
+
         }
     }
 }
