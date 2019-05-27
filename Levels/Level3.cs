@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Eternity
+namespace Eternity.Levels
 {
     class Level3 : WallLevel
     {

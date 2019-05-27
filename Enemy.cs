@@ -12,34 +12,83 @@ namespace Eternity
         int x_pos;
         int y_pos;
         int size;
-        public int x { get { return x_pos; } set { x_pos = value; } }
-        public int y { get { return y_pos; } set { y_pos = value; } }
-        public int Size { get { return size; } set { size = value; } }
-
-        protected Color color { get; set; }
+        public int x { get; set; }
+        public int y { get; set; }
+        public int Size { get; set; }
+        protected Color Color { get; set; }
 
         protected Enemy(int x_pos, int y_pos, int size)
         {
-            this.x_pos = x_pos;
-            this.y_pos = y_pos;
-            this.size = size;
+            this.x = x_pos;
+            this.y = y_pos;
+            this.Size = size;
         }
 
         public abstract void DrawEnemy(Graphics g, SolidBrush b);
+    }
+
+    public abstract class MovingEnemy : Enemy
+    {
+        protected MovingEnemy(int x_pos, int y_pos, int size) : base(x_pos, y_pos, size)
+        {
+            this.x = x_pos;
+            this.y = y_pos;
+            this.Size = size;
+        }
+
+        public abstract void RedrawEnemy(Graphics g, SolidBrush b);
     }
 
     public class RedSquare : Enemy
     {
         public RedSquare(int x_pos, int y_pos, int size) : base(x_pos, y_pos, size)
         {
-            this.color = Color.Red;
+            this.Color = Color.Red;
         }
 
         override
         public void DrawEnemy(Graphics g, SolidBrush b)
         {
-            b.Color = color;
+            b.Color = Color;
             g.FillRectangle(b, this.x, this.y, this.Size, this.Size);
+        }
+    }
+
+    public class KillerGreen : MovingEnemy
+    {
+        int Threshold_x_right { get; set; } = MainFrame.FORM_WIDTH;
+        int Threshold_x_left { get; set; } = 0;
+        int Threshold_y_up { get; set; } = 0;
+        int Threshold_y_down { get; set; } = MainFrame.FORM_HEIGHT;
+        bool goingRight = true;
+        public KillerGreen(int x_pos, int y_pos, int size) : base(x_pos, y_pos, size)
+        {
+            this.Color = Color.Green;
+        }
+
+        override
+        public void DrawEnemy(Graphics g, SolidBrush b)
+        {
+            b.Color = Color;
+            g.FillRectangle(b, this.x, this.y, this.Size, this.Size);
+        }
+
+        override
+        public void RedrawEnemy(Graphics g, SolidBrush b)
+        {
+
+
+            if (goingRight && this.x < Threshold_x_right - 100)
+            {
+                this.x += 5;
+            }
+            else if (this.x > Threshold_x_left + 100)
+            {
+                goingRight = false;
+                this.x -= 5;
+            }
+            else if (!goingRight && this.x <= Threshold_x_left + 100)
+                goingRight = true;
         }
     }
 }

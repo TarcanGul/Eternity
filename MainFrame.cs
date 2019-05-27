@@ -9,46 +9,73 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Drawing.Imaging;
 using System.Diagnostics;
+using Eternity.Levels;
+
 
 namespace Eternity
 {
     public partial class MainFrame : Form
     {
         //Menu controls.
+        System.Windows.Forms.Timer UpdateTimer;
         Label titleLabel;
         Button startButton;
         Button helpButton;
-
-        const int FORM_WIDTH = 800;
-        const int FORM_HEIGHT = 800;
-        const int DEF_BUTTON_WIDTH = FORM_WIDTH / 8;
-        const int DEF_BUTTON_HEIGHT = FORM_HEIGHT / 16;
-        const int FINAL_LEVEL = 3;
-
+        public static int FORM_WIDTH { get; } = 800; 
+        public static int FORM_HEIGHT { get; } = 800;
+        static int DEF_BUTTON_WIDTH = FORM_WIDTH / 8;
+        static int DEF_BUTTON_HEIGHT = FORM_HEIGHT / 16;
+        const int FINAL_LEVEL = 4;
         Font greetingFont;
+
+        bool wallDrawn = false;
     
         private Bitmap DrawingArea;
         Pen pen;
         SolidBrush brush;
         Graphics g;
+        static Graphics g2;
+        static SolidBrush brush2;
+
 
         GameCharacter player;
         Wall spawnPoint;
-        WallLevel level;
+        static WallLevel level;
 
         int currentLevel = 1;
 
         bool keyboardHandlerEnabled = true;
+        public void UpdateLevel(object sender, EventArgs e)
+        {
+            Debug.WriteLine("Enemy thread started");
+            foreach (Enemy enemy in level.AllEnemies)
+            {
+                if (enemy is MovingEnemy)
+                {
+                    Debug.WriteLine("Moving enemy...");
+                    MovingEnemy movingEnemy = (MovingEnemy)enemy;
+                    movingEnemy.RedrawEnemy(g, brush);
+                }
+            }
+            refreshView();
+            if (level != null && level.DestinationReached(player.x, player.y)) ShowPlayerSuccessScreen();
+            else if (level != null && level.TouchedEnemy(player.x, player.y)) ShowPlayerFailureScreen();
+            
+        }
 
-     
         public MainFrame()
         {
             InitializeComponent();
+            UpdateTimer = new System.Windows.Forms.Timer();
+            UpdateTimer.Tick += new EventHandler(UpdateLevel);
+            UpdateTimer.Interval = 1000/60;
             this.Paint += new PaintEventHandler(this.OpenPaintEvent);
             DrawingArea = new Bitmap(FORM_WIDTH, FORM_HEIGHT, PixelFormat.Format24bppRgb);
             g = Graphics.FromImage(DrawingArea);
+            g2 = Graphics.FromImage(DrawingArea);
             pen = new Pen(Color.Green);
             brush = new SolidBrush(Color.Red);
+            brush2 = new SolidBrush(Color.Red);
             this.Text = @"Tarcan's Room";
             this.ClientSize = new Size(FORM_WIDTH, FORM_HEIGHT);
             this.StartPosition = FormStartPosition.CenterScreen;
@@ -61,6 +88,8 @@ namespace Eternity
             this.KeyPreview = true;
             this.KeyDown += new KeyEventHandler(this.KeyBoardPressed);
             this.DoubleBuffered = true;
+
+            
         }
 
         private void MainFrame_Load(object sender, EventArgs e)
@@ -70,6 +99,7 @@ namespace Eternity
 
         private void ShowMenu()
         {
+            UpdateTimer.Stop();
             keyboardHandlerEnabled = false;
             this.Text = "Eternity Menu";
             AddMenuLabels();
@@ -161,29 +191,25 @@ namespace Eternity
             this.Invalidate();
             this.Controls.Clear();
         }
-
         private void refreshView()
         {
             brush.Color = Color.Red;
             g.Clear(Color.Azure);
             this.Invalidate();
             g.FillEllipse(brush, player.x, player.y, player.Size, player.Size);
+            foreach (Enemy e in level.AllEnemies)
+            {
+                if (e is MovingEnemy)
+                {
+                    e.DrawEnemy(g, brush);
+                }
+            }
             createLevel();
         }
 
         private void startGame()
         {
             keyboardHandlerEnabled = true;
-            createLevel();
-            
-            brush.Color = Color.Red;
-            player = new GameCharacter(spawnPoint.x, spawnPoint.y, g, brush);
-            
-        }
-
-        private void createLevel()
-        {
-
             switch (currentLevel)
             {
                 case 1: level = new Level1();
@@ -194,35 +220,55 @@ namespace Eternity
                         break;
                 case 3: level = new Level3();
                     this.Text = "Level 3"; break;
+                case 4: level = new Level4();
+                    this.Text = "Level 4"; break;
                 default: GoBackToMenu(); break;
                 //Default throw exception.
             }
-            spawnPoint = level.GetSpawnPoint();
-            foreach(Wall w in level.AllWalls)
-            {
-                if (brush.Color != w.color) brush.Color = w.color;
+            createLevel();
+            UpdateTimer.Start();
+            brush.Color = Color.Red;
+            player = new GameCharacter(spawnPoint.x, spawnPoint.y, g, brush);
+            
+        }
 
+        private void createLevel()
+        {
 
-                if (w.GetType() == typeof(SpawnWall))
+                spawnPoint = level.GetSpawnPoint();
+
+                foreach (Wall w in level.AllWalls)
                 {
-                    pen.Color = w.color;
-                    g.DrawRectangle(pen, w.x, w.y, w.size, w.size);
-                }
-                else
-                    g.FillRectangle(brush, w.x, w.y, w.size, w.size);
-            }
+                    if (brush.Color != w.color) brush.Color = w.color;
 
-            if (level.AllEnemies.Count != 0)
-            {
-                foreach(Enemy e in level.AllEnemies)
-                {
-                    e.DrawEnemy(g, brush);
+
+                    if (w.GetType() == typeof(SpawnWall))
+                    {
+                        pen.Color = w.color;
+                        g.DrawRectangle(pen, w.x, w.y, w.size, w.size);
+                    }
+                    else
+                        g.FillRectangle(brush, w.x, w.y, w.size, w.size);
                 }
-            }
+                
+
+                if (level.AllEnemies.Count != 0)
+                {
+                    foreach (Enemy e in level.AllEnemies)
+                    {
+                        e.DrawEnemy(g, brush);
+                    }
+                }
+
+               
+
+            
+
         }
 
         private void ShowPlayerSuccessScreen()
         {
+            UpdateTimer.Stop();
             keyboardHandlerEnabled = false;
             this.Text = "Congrats!";
             ClearScreen();
@@ -231,6 +277,7 @@ namespace Eternity
 
         private void ShowPlayerFailureScreen()
         {
+            UpdateTimer.Stop();
             keyboardHandlerEnabled = false;
             this.Text = "Oops!";
             ClearScreen();
@@ -316,6 +363,7 @@ namespace Eternity
             ShowMenu();
         }
 
+
         public void KeyBoardPressed(object sender, KeyEventArgs ke)
         {
             if (!keyboardHandlerEnabled) return;
@@ -326,38 +374,26 @@ namespace Eternity
                     case Keys.Up:
                     case Keys.W:
                         player.y -= 10;
-                        if (player.y < 0) player.y = 0;
-                        else if (level != null && level.InWallBoundaries(player.x, player.y)) player.y += 10; //Undo change.
-                        else if (level != null && level.DestinationReached(player.x, player.y)) ShowPlayerSuccessScreen();
-                        else if (level != null && level.TouchedEnemy(player.x, player.y)) ShowPlayerFailureScreen();
-                        else refreshView();
+                        if (level != null && level.InWallBoundaries(player.x, player.y)) player.y += 10; //Undo change.
+                        else if (player.y < 0) player.y = 0;
                         break;
                     case Keys.Left:
-                    case Keys.A :
+                    case Keys.A:
                         player.x -= 10;
-                        if (player.x < 0) player.x = 0;
-                        else if (level != null && level.InWallBoundaries(player.x, player.y)) player.x += 10; //Undo change.
-                        else if (level != null && level.DestinationReached(player.x, player.y)) ShowPlayerSuccessScreen();
-                        else if (level != null && level.TouchedEnemy(player.x, player.y)) ShowPlayerFailureScreen();
-                        else refreshView();
+                        if (level != null && level.InWallBoundaries(player.x, player.y)) player.x += 10;
+                        else if (player.x < 0) player.x = 0;
                         break;
                     case Keys.Down:
                     case Keys.S :
                         player.y += 10;
                         if (player.y > FORM_HEIGHT - 30) player.y = FORM_HEIGHT - 30;
                         else if (level != null && level.InWallBoundaries(player.x, player.y)) player.y -= 10; //Undo change.
-                        else if (level != null && level.DestinationReached(player.x, player.y)) ShowPlayerSuccessScreen();
-                        else if (level != null && level.TouchedEnemy(player.x, player.y)) ShowPlayerFailureScreen();
-                        else refreshView();
                         break;
                     case Keys.Right:
                     case Keys.D :
                         player.x += 10;
                         if (player.x > FORM_WIDTH - 30) player.x = FORM_WIDTH - 30;
                         else if (level != null && level.InWallBoundaries(player.x, player.y)) player.x -= 10; //Undo change.
-                        else if (level != null && level.DestinationReached(player.x, player.y)) ShowPlayerSuccessScreen();
-                        else if (level != null && level.TouchedEnemy(player.x, player.y)) ShowPlayerFailureScreen();
-                        else refreshView();
                         break;
                 }
 

@@ -8,7 +8,7 @@ using System.Diagnostics;
 
 namespace Eternity
 {
-    class Wall
+    public class Wall
     {
         int pos_x;
         int pos_y;
@@ -61,7 +61,7 @@ namespace Eternity
             this.color = Color.Magenta;
         }
     }
-    abstract class WallLevel
+    public abstract class WallLevel
     {
         const int X_OFFSET = 0;
         const int Y_OFFSET = 0;
@@ -75,7 +75,7 @@ namespace Eternity
          * 
          * */
         int[,] level;
-        
+
 
         List<Wall> allWalls;
         List<Enemy> allEnemies;
@@ -86,7 +86,7 @@ namespace Eternity
         public WallLevel()
         {
             allWalls = new List<Wall>();
-            allEnemies = new List<Enemy>();   
+            allEnemies = new List<Enemy>();
         }
 
         public int[,] Level
